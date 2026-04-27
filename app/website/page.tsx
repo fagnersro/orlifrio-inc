@@ -5,7 +5,7 @@ import Hero from "./components/sections/Hero"
 import Benefits from "./components/sections/Benefits"
 import Economy from "./components/sections/Economy"
 import CTAForm from "./components/sections/CTAForm"
-import Clients from "./components/sections/Clients"
+import Services from "./components/sections/Services"
 import MapSection from "./components/sections/MapSection"
 import CTAFinal from "./components/sections/CTAFinal"
 
@@ -18,7 +18,7 @@ export default function Home() {
         <Hero />
         <Benefits />
         <Economy />
-        <Clients />
+        <Services />
         <CTAForm />
         <CTAFinal />
         <MapSection />

@@ -5,10 +5,10 @@ import Logo from "../ui/Logo"
 
 const navLinks = [
   { label: "Serviços", href: "#servicos" },
-  { label: "Benefícios", href: "#beneficios" },
+  { label: "Planos", href: "#beneficios" },
   { label: "Clientes", href: "#clientes" },
   { label: "Contato", href: "#contato" },
-  { label: "Login", href: "#login" },
+  { label: "Login", href: "/login" },
 ]
 
 // Cada slide tem uma forma + um gradiente.
