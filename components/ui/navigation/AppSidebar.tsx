@@ -25,7 +25,7 @@ import {
   Wrench,
 } from "lucide-react"
 import * as React from "react"
-import { Logo } from "../../../public/Logo"
+import  { Logo }  from "../../../public/Logo"
 import { UserProfile } from "./UserProfile"
 
 const navigation = [
@@ -103,11 +103,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Logo className="size-6 text-blue-500 dark:text-blue-500" />
           </span>
           <div>
-            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-50">
+            <span className="block text-sm font-semibold text-[#0b2d7a] dark:text-gray-50">
               Orlifrio
             </span>
-            <span className="block text-xs text-gray-500 dark:text-gray-400">
-              Refrigeração Industrial
+            <span className="block text-xs text-[#e11d48] dark:text-gray-400">
+              Refrigeração
             </span>
           </div>
         </div>

@@ -1,0 +1,308 @@
+"use client";
+
+import { useState } from "react";
+import {
+  RiArrowLeftSLine,
+  RiArrowRightSLine,
+  RiArrowDownSLine,
+  RiCalendarLine,
+  RiMapPinLine,
+  RiTimeLine,
+} from "@remixicon/react";
+import { cx } from "@/lib/utils";
+import type { Attendee, MaintenanceEvent } from "../store-data";
+
+// ── Constantes ────────────────────────────────────────────────
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+const MONTHS_SHORT = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+const MONTHS_LONG = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+// ── Estilos por tipo de manutenção ────────────────────────────
+const typeChip = {
+  preventiva: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+  corretiva:  "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
+  instalação: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+};
+
+const typeLabel = {
+  preventiva: "Preventiva",
+  corretiva:  "Corretiva",
+  instalação: "Instalação",
+};
+
+const typeDot = {
+  preventiva: "#3b82f6",
+  corretiva:  "#f59e0b",
+  instalação: "#10b981",
+};
+
+// ── Sub-componente: avatar ────────────────────────────────────
+function Avatar({ attendee, size = 28 }: { attendee: Attendee; size?: number }) {
+  return (
+    <span
+      title={attendee.name}
+      style={{ width: size, height: size, backgroundColor: attendee.color }}
+      className="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-white text-white dark:border-gray-900"
+    >
+      <span style={{ fontSize: size * 0.38 }} className="font-semibold leading-none">
+        {attendee.initials}
+      </span>
+    </span>
+  );
+}
+
+// ── Sub-componente: lista de avatares sobrepostos ─────────────
+function AvatarStack({ attendees }: { attendees: Attendee[] }) {
+  const visible = attendees.slice(0, 4);
+  const overflow = attendees.length - visible.length;
+
+  return (
+    <div className="flex items-center">
+      {visible.map((a, i) => (
+        <span
+          key={i}
+          className="relative"
+          style={{ marginLeft: i === 0 ? 0 : -8, zIndex: visible.length - i }}
+        >
+          <Avatar attendee={a} size={28} />
+        </span>
+      ))}
+      {overflow > 0 && (
+        <span
+          className="relative inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[10px] font-semibold text-gray-600 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300"
+          style={{ marginLeft: -8 }}
+        >
+          +{overflow}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Sub-componente: card de evento ────────────────────────────
+function ScheduleCard({ event }: { event: MaintenanceEvent }) {
+  return (
+    <div className="py-4 first:pt-0 last:pb-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          {/* Chip de tipo */}
+          <span
+            className={cx(
+              "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
+              typeChip[event.type],
+            )}
+          >
+            {typeLabel[event.type]}
+          </span>
+
+          {/* Título */}
+          <p className="text-sm font-semibold leading-snug text-gray-900 dark:text-gray-50">
+            {event.description}
+          </p>
+
+          {/* Local + hora */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+            <span className="flex items-center gap-1">
+              <RiMapPinLine className="size-3.5 shrink-0" />
+              {event.location}
+            </span>
+            <span className="flex items-center gap-1">
+              <RiTimeLine className="size-3.5 shrink-0" />
+              {event.time}
+            </span>
+          </div>
+        </div>
+
+        {/* Avatares dos participantes */}
+        <div className="shrink-0 pt-5">
+          <AvatarStack attendees={event.attendees} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+interface StoreCalendarProps {
+  events: MaintenanceEvent[];
+}
+
+export function StoreCalendar({ events }: StoreCalendarProps) {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  );
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  // Dias do mês atual
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Agrupar eventos por dia (apenas do mês/ano em visualização)
+  const toKey = (d: number) =>
+    `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+  const eventsByDay = events.reduce<Record<string, MaintenanceEvent[]>>(
+    (acc, ev) => {
+      const evYear = parseInt(ev.date.slice(0, 4));
+      const evMonth = parseInt(ev.date.slice(5, 7)) - 1;
+      const evDay = parseInt(ev.date.slice(8, 10));
+      if (evYear === year && evMonth === month) {
+        const key = String(evDay);
+        (acc[key] ??= []).push(ev);
+      }
+      return acc;
+    },
+    {},
+  );
+
+  // Eventos a exibir na seção Schedules
+  const scheduleEvents = selectedDay
+    ? (eventsByDay[String(selectedDay)] ?? [])
+    : Object.values(eventsByDay).flat().sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+  // Label do botão de filtro
+  const filterLabel = selectedDay
+    ? `${String(selectedDay).padStart(2, "0")} ${MONTHS_SHORT[month]}`
+    : `${MONTHS_SHORT[month]} ${year}`;
+
+  const cells: (number | null)[] = [
+    ...Array<null>(firstDayOfWeek).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  return (
+    <div className="flex flex-col gap-0">
+
+      {/* ── Calendário ───────────────────────────────────────── */}
+      <div>
+        {/* Header: mês/ano + navegação */}
+        <div className="mb-3 flex items-center justify-between">
+          <button className="flex items-center gap-1 text-sm font-semibold text-gray-900 hover:text-gray-700 dark:text-gray-50 dark:hover:text-gray-200">
+            {MONTHS_LONG[month]} {year}
+            <RiArrowDownSLine className="size-4 text-gray-400" />
+          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setViewDate(new Date(year, month - 1, 1));
+                setSelectedDay(null);
+              }}
+              className="rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              aria-label="Mês anterior"
+            >
+              <RiArrowLeftSLine className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setViewDate(new Date(year, month + 1, 1));
+                setSelectedDay(null);
+              }}
+              className="rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              aria-label="Próximo mês"
+            >
+              <RiArrowRightSLine className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Cabeçalho dos dias da semana */}
+        <div className="grid grid-cols-7 text-center">
+          {WEEKDAYS.map((d, i) => (
+            <div
+              key={`${d}-${i}`}
+              className="py-1 text-[11px] font-medium text-gray-400 dark:text-gray-600"
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Grade de dias */}
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {cells.map((day, i) => {
+            if (!day) return <div key={`e-${i}`} />;
+            const key = String(day);
+            const dayEvents = eventsByDay[key];
+            const isToday =
+              day === today.getDate() &&
+              month === today.getMonth() &&
+              year === today.getFullYear();
+            const isSelected = day === selectedDay;
+
+            // Ponto representativo do primeiro tipo de evento do dia
+            const dotColor = dayEvents ? typeDot[dayEvents[0].type] : null;
+
+            return (
+              <button
+                key={toKey(day)}
+                onClick={() => setSelectedDay(isSelected ? null : day)}
+                className={cx(
+                  "relative mx-auto flex size-8 items-center justify-center rounded-full text-sm transition-colors",
+                  isSelected
+                    ? "bg-blue-600 font-semibold text-white"
+                    : isToday
+                      ? "bg-blue-50 font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
+                )}
+              >
+                {day}
+                {dotColor && (
+                  <span
+                    className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full"
+                    style={{ backgroundColor: isSelected ? "#ffffff" : dotColor }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Divider ───────────────────────────────────────────── */}
+      <div className="my-5 border-t border-gray-100 dark:border-gray-800" />
+
+      {/* ── Schedules ─────────────────────────────────────────── */}
+      <div>
+        {/* Header da seção */}
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+            Schedules
+          </h3>
+
+          {/* Botão de filtro de data */}
+          <button
+            onClick={() => setSelectedDay(null)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <RiCalendarLine className="size-3.5 text-gray-400 dark:text-gray-500" />
+            {filterLabel}
+            <RiArrowDownSLine className="size-3.5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Lista de eventos */}
+        {scheduleEvents.length > 0 ? (
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {scheduleEvents.map((ev, i) => (
+              <ScheduleCard key={`${ev.date}-${ev.time}-${i}`} event={ev} />
+            ))}
+          </div>
+        ) : (
+          <p className="py-6 text-center text-xs text-gray-400 dark:text-gray-600">
+            Nenhuma manutenção agendada para este período.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

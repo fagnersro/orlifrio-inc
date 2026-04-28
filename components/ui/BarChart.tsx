@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  Area,
-  AreaChart as RechartsAreaChart,
+  Bar,
+  BarChart as RechartsBarChart,
   CartesianGrid,
   Legend,
   ResponsiveContainer,
@@ -14,17 +14,17 @@ import {
 import { useTheme } from "next-themes";
 import { cx } from "@/lib/utils";
 
-const colorPalette: Record<string, { stroke: string; fill: string }> = {
-  blue:    { stroke: "#3b82f6", fill: "#3b82f6" },
-  emerald: { stroke: "#10b981", fill: "#10b981" },
-  violet:  { stroke: "#8b5cf6", fill: "#8b5cf6" },
-  amber:   { stroke: "#f59e0b", fill: "#f59e0b" },
-  rose:    { stroke: "#f43f5e", fill: "#f43f5e" },
-  cyan:    { stroke: "#06b6d4", fill: "#06b6d4" },
-  gray:    { stroke: "#6b7280", fill: "#6b7280" },
+const colorMap: Record<string, string> = {
+  blue: "#3b82f6",
+  emerald: "#10b981",
+  violet: "#8b5cf6",
+  amber: "#f59e0b",
+  rose: "#f43f5e",
+  cyan: "#06b6d4",
+  gray: "#6b7280",
 };
 
-interface AreaChartProps {
+interface BarChartProps {
   data: Record<string, unknown>[];
   index: string;
   categories: string[];
@@ -40,19 +40,19 @@ interface AreaChartProps {
 
 const defaultFormatter = (v: number) => String(v);
 
-export function AreaChart({
+export function BarChart({
   data,
   index,
   categories,
-  colors = ["blue", "emerald", "violet", "amber", "rose", "cyan"],
+  colors = ["blue"],
   valueFormatter = defaultFormatter,
-  showLegend = true,
+  showLegend = false,
   showGridLines = true,
   showXAxis = true,
   showYAxis = true,
   className,
   height = 300,
-}: AreaChartProps) {
+}: BarChartProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -64,24 +64,16 @@ export function AreaChart({
   const tooltipBg = isDark ? "#111827" : "#ffffff";
   const tooltipBorder = isDark ? "#1f2937" : "#e5e7eb";
   const tooltipText = isDark ? "#f9fafb" : "#111827";
+  const cursorFill = isDark ? "#1f2937" : "#f3f4f6";
 
   return (
     <div className={cx("w-full", className)}>
       <ResponsiveContainer width="100%" height={height}>
-        <RechartsAreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-          <defs>
-            {categories.map((cat, i) => {
-              const colorKey = colors[i % colors.length] ?? "blue";
-              const color = colorPalette[colorKey] ?? colorPalette.blue;
-              return (
-                <linearGradient key={cat} id={`fill-${cat}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={color.fill} stopOpacity={isDark ? 0.25 : 0.18} />
-                  <stop offset="95%" stopColor={color.fill} stopOpacity={0} />
-                </linearGradient>
-              );
-            })}
-          </defs>
-
+        <RechartsBarChart
+          data={data}
+          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+          barCategoryGap="38%"
+        >
           {showGridLines && (
             <CartesianGrid
               strokeDasharray="3 3"
@@ -89,7 +81,6 @@ export function AreaChart({
               vertical={false}
             />
           )}
-
           {showXAxis && (
             <XAxis
               dataKey={index}
@@ -98,17 +89,16 @@ export function AreaChart({
               axisLine={false}
             />
           )}
-
           {showYAxis && (
             <YAxis
               tick={{ fontSize: 12, fill: tickColor }}
               tickLine={false}
               axisLine={false}
               tickFormatter={valueFormatter}
-              width={56}
+              width={36}
+              allowDecimals={false}
             />
           )}
-
           <Tooltip
             contentStyle={{
               backgroundColor: tooltipBg,
@@ -118,37 +108,25 @@ export function AreaChart({
               color: tooltipText,
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
             }}
-            formatter={(value, name) => [
-              valueFormatter(value as number),
-              name,
-            ]}
+            formatter={(value, name) => [valueFormatter(value as number), name]}
+            cursor={{ fill: cursorFill }}
           />
-
           {showLegend && (
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: "12px", paddingTop: "16px", color: tickColor }}
+              wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }}
             />
           )}
-
-          {categories.map((cat, i) => {
-            const colorKey = colors[i % colors.length] ?? "blue";
-            const color = colorPalette[colorKey] ?? colorPalette.blue;
-            return (
-              <Area
-                key={cat}
-                type="monotone"
-                dataKey={cat}
-                stroke={color.stroke}
-                strokeWidth={2}
-                fill={`url(#fill-${cat})`}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 0 }}
-              />
-            );
-          })}
-        </RechartsAreaChart>
+          {categories.map((cat, i) => (
+            <Bar
+              key={cat}
+              dataKey={cat}
+              fill={colorMap[colors[i % colors.length] ?? "blue"] ?? "#3b82f6"}
+              radius={[4, 4, 0, 0]}
+            />
+          ))}
+        </RechartsBarChart>
       </ResponsiveContainer>
     </div>
   );
