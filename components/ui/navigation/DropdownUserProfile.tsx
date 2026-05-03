@@ -14,6 +14,7 @@ import {
   DropdownMenuSubMenuTrigger,
   DropdownMenuTrigger,
 } from "@/components/DropdownMenu"
+import { logoutAction } from "@/app/(auth)/login/actions"
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import * as React from "react"
@@ -21,11 +22,13 @@ import * as React from "react"
 export type DropdownUserProfileProps = {
   children: React.ReactNode
   align?: "center" | "start" | "end"
+  email?: string | null
 }
 
 export function DropdownUserProfile({
   children,
   align = "start",
+  email,
 }: DropdownUserProfileProps) {
   const [mounted, setMounted] = React.useState(false)
   const { theme, setTheme } = useTheme()
@@ -43,7 +46,7 @@ export function DropdownUserProfile({
         align={align}
         className="sm:!min-w-[calc(var(--radix-dropdown-menu-trigger-width))]"
       >
-        <DropdownMenuLabel>admin@orlifrio.com</DropdownMenuLabel>
+        <DropdownMenuLabel>{email ?? "Usuário"}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuSubMenu>
             <DropdownMenuSubMenuTrigger>Tema</DropdownMenuSubMenuTrigger>
@@ -83,9 +86,11 @@ export function DropdownUserProfile({
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <a href="/login" className="w-full">
-              Sair
-            </a>
+            <form action={logoutAction} className="w-full">
+              <button type="submit" className="w-full text-left">
+                Sair
+              </button>
+            </form>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

@@ -478,7 +478,7 @@ export default function LoginPage() {
                       </Label>
                       {tab === 'signin' && (
                         <a
-                          href="#"
+                          href="/forgot-password"
                           className="text-sm font-medium text-blue-500 hover:text-blue-600 dark:text-blue-500 hover:dark:text-blue-600"
                         >
                           Esqueceu a senha?

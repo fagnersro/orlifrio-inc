@@ -1,3 +1,4 @@
+import { auth } from "@/auth"
 import { AppSidebar } from "@/components/ui/navigation/AppSidebar"
 import { Breadcrumbs } from "@/components/ui/navigation/Breadcrumbs"
 import { SidebarProvider, SidebarTrigger } from "@/components/Sidebar"
@@ -10,10 +11,11 @@ export default async function DashboardLayout({
 }) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
+  const session = await auth()
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar />
+      <AppSidebar user={session?.user} />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
           <SidebarTrigger className="-ml-1" />

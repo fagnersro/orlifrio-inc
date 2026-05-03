@@ -6,7 +6,7 @@ import { AuthError } from 'next-auth';
 
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { signIn } from '@/auth';
+import { signIn, signOut } from '@/auth';
 import { loginSchema, registerSchema } from '@/lib/schemas/auth';
 
 export type FormState = {
@@ -99,4 +99,9 @@ export async function registerAction(
   });
 
   return {};
+}
+
+// ============= LOGOUT =============
+export async function logoutAction() {
+  await signOut({ redirectTo: '/login' });
 }

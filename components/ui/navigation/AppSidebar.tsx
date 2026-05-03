@@ -84,7 +84,16 @@ const navigation2 = [
   },
 ] as const
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type SessionUser = {
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+export function AppSidebar({
+  user,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { user?: SessionUser }) {
   const [openMenus, setOpenMenus] = React.useState<string[]>([
     navigation2[0].name,
   ])
@@ -195,7 +204,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <div className="border-t border-gray-200 dark:border-gray-800" />
-        <UserProfile />
+        <UserProfile name={user?.name} email={user?.email} image={user?.image} />
       </SidebarFooter>
     </Sidebar>
   )
