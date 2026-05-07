@@ -1,4 +1,6 @@
 import { auth } from '@/auth';
+import { hasPermission } from '@/lib/permissions';
+import { permissionForPath } from '@/lib/route-permissions';
 import { NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/website', '/login', '/forgot-password', '/reset-password'];
@@ -22,8 +24,18 @@ export default auth((req) => {
   if (!isAuthenticated && !isPublic(pathname)) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
+
+  // Authenticated but missing permission for this route → send home with banner
+  if (isAuthenticated) {
+    const required = permissionForPath(pathname);
+    if (required && !hasPermission(req.auth?.user?.role, required)) {
+      return NextResponse.redirect(new URL('/?error=forbidden', req.url));
+    }
+  }
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|avif|svg|ico)$).*)',
+  ],
 };

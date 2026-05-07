@@ -12,6 +12,7 @@ import {
   RiUserLine,
 } from "@remixicon/react";
 
+import { Can } from "@/components/ui/Can";
 import { Card } from "@/components/ui/Card";
 import { stores } from "@/app/(dashboard)/(overview)/data";
 import { getStoreDetail } from "./store-data";
@@ -190,15 +191,17 @@ export default async function StorePage({
                   </div>
                 </div>
 
-                <a
-                  href={rep.url}
-                  download
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-50"
-                  aria-label={`Baixar ${rep.title}`}
-                >
-                  <RiDownloadLine className="size-3.5" aria-hidden />
-                  Baixar
-                </a>
+                <Can permission="reports:download">
+                  <a
+                    href={rep.url}
+                    download
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-50"
+                    aria-label={`Baixar ${rep.title}`}
+                  >
+                    <RiDownloadLine className="size-3.5" aria-hidden />
+                    Baixar
+                  </a>
+                </Can>
               </div>
             ))}
 

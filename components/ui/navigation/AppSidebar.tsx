@@ -14,10 +14,11 @@ import {
   SidebarMenuSub,
   SidebarSubLink,
 } from "@/components/Sidebar"
+import { hasPermission, type Permission } from "@/lib/permissions"
+import { useRole } from "@/lib/role-context"
 import { cx, focusRing } from "@/lib/utils"
 import { RiArrowDownSFill } from "@remixicon/react"
 import {
-  FileBarChart,
   House,
   Settings,
   Thermometer,
@@ -28,7 +29,27 @@ import * as React from "react"
 import  { Logo }  from "../../../public/Logo"
 import { UserProfile } from "./UserProfile"
 
-const navigation = [
+type NavItem = {
+  name: string
+  href: string
+  icon: React.ElementType
+  notifications: boolean
+  active: boolean
+  permission?: Permission
+}
+
+type NavGroup = {
+  name: string
+  icon: React.ElementType
+  children: ReadonlyArray<{
+    name: string
+    href: string
+    active: boolean
+    permission?: Permission
+  }>
+}
+
+const navigation: ReadonlyArray<NavItem> = [
   {
     name: "Visão Geral",
     href: "/",
@@ -49,40 +70,42 @@ const navigation = [
     icon: Users,
     notifications: false,
     active: false,
+    permission: "users:read",
   },
-] as const
+]
 
-const navigation2 = [
+const navigation2: ReadonlyArray<NavGroup> = [
   {
     name: "Operações",
-    href: "#",
     icon: Wrench,
     children: [
       {
         name: "Manutenção",
         href: "/manutencao",
         active: false,
+        permission: "services:update",
       },
       {
         name: "Relatórios",
         href: "/relatorios",
         active: false,
+        permission: "reports:view",
       },
     ],
   },
   {
     name: "Configurações",
-    href: "#",
     icon: Settings,
     children: [
       {
         name: "Geral",
         href: "/configuracoes",
         active: false,
+        permission: "settings:manage",
       },
     ],
   },
-] as const
+]
 
 type SessionUser = {
   name?: string | null
@@ -94,6 +117,7 @@ export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user?: SessionUser }) {
+  const role = useRole()
   const [openMenus, setOpenMenus] = React.useState<string[]>([
     navigation2[0].name,
   ])
@@ -134,18 +158,24 @@ export function AppSidebar({
         <SidebarGroup className="pt-0">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {navigation.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarLink
-                    href={item.href}
-                    isActive={item.active}
-                    icon={item.icon}
-                    notifications={item.notifications}
-                  >
-                    {item.name}
-                  </SidebarLink>
-                </SidebarMenuItem>
-              ))}
+              {navigation.map((item) => {
+                const disabled = item.permission
+                  ? !hasPermission(role, item.permission)
+                  : false
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarLink
+                      href={item.href}
+                      isActive={item.active}
+                      icon={item.icon}
+                      notifications={item.notifications}
+                      disabled={disabled}
+                    >
+                      {item.name}
+                    </SidebarLink>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -184,16 +214,22 @@ export function AppSidebar({
                   {item.children && openMenus.includes(item.name) && (
                     <SidebarMenuSub>
                       <div className="absolute inset-y-0 left-4 w-px bg-gray-300 dark:bg-gray-800" />
-                      {item.children.map((child) => (
-                        <SidebarMenuItem key={child.name}>
-                          <SidebarSubLink
-                            href={child.href}
-                            isActive={child.active}
-                          >
-                            {child.name}
-                          </SidebarSubLink>
-                        </SidebarMenuItem>
-                      ))}
+                      {item.children.map((child) => {
+                        const disabled = child.permission
+                          ? !hasPermission(role, child.permission)
+                          : false
+                        return (
+                          <SidebarMenuItem key={child.name}>
+                            <SidebarSubLink
+                              href={child.href}
+                              isActive={child.active}
+                              disabled={disabled}
+                            >
+                              {child.name}
+                            </SidebarSubLink>
+                          </SidebarMenuItem>
+                        )
+                      })}
                     </SidebarMenuSub>
                   )}
                 </SidebarMenuItem>

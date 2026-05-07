@@ -4,9 +4,16 @@ import {
   timestamp,
   primaryKey,
   integer,
-  varchar,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
+
+export const userRoleEnum = pgEnum('user_role',[
+  'admin', 
+  'manager',  //gestor
+  'technical', // tecnico
+  'customer' // cliente
+]);
 
 // ============= USERS =============
 export const users = pgTable('user', {
@@ -19,6 +26,7 @@ export const users = pgTable('user', {
   image: text('image'),
   // Campo customizado para login com email/senha (Credentials provider)
   password: text('password'),
+  role: userRoleEnum('role').notNull().default('customer'),
 });
 
 // ============= ACCOUNTS =============
@@ -78,3 +86,4 @@ export const verificationTokens = pgTable(
 // ============= TIPOS INFERIDOS =============
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type UserRole = (typeof userRoleEnum.enumValues)[number];

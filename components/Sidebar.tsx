@@ -10,7 +10,7 @@ import { useIsMobile } from "@/lib/useMobile"
 import { cx, focusRing } from "@/lib/utils"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import { RiCloseLine } from "@remixicon/react"
-import { PanelLeft } from "lucide-react"
+import { Lock, PanelLeft } from "lucide-react"
 import * as React from "react"
 import { Button } from "./Button"
 
@@ -262,34 +262,60 @@ const SidebarLink = React.forwardRef<
     icon?: React.ElementType
     isActive?: boolean
     notifications?: number | boolean
+    disabled?: boolean
   }
->(({ children, isActive, icon, notifications, className, ...props }, ref) => {
-  const Icon = icon
-  return (
-    <a
-      ref={ref}
-      aria-current={isActive ? "page" : undefined}
-      data-active={isActive}
-      className={cx(
-        "flex items-center justify-between rounded-md p-2 text-base transition hover:bg-gray-200/50 sm:text-sm hover:dark:bg-gray-900",
-        "text-gray-900 dark:text-gray-400 hover:dark:text-gray-50",
-        "data-[active=true]:text-blue-600 data-[active=true]:dark:text-blue-500",
-        focusRing,
-      )}
-      {...props}
-    >
-      <span className="flex items-center gap-x-2.5">
-        {Icon && <Icon className="size-[18px] shrink-0" aria-hidden="true" />}
-        {children}
-      </span>
-      {notifications && (
-        <span className="inline-flex size-5 items-center justify-center rounded bg-blue-100 text-sm font-medium text-blue-600 sm:text-xs dark:bg-blue-500/10 dark:text-blue-500">
-          {notifications}
+>(
+  (
+    { children, isActive, icon, notifications, disabled, className, href, onClick, ...props },
+    ref,
+  ) => {
+    const Icon = icon
+    return (
+      <a
+        ref={ref}
+        href={disabled ? undefined : href}
+        aria-current={isActive ? "page" : undefined}
+        aria-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : undefined}
+        data-active={isActive}
+        data-disabled={disabled || undefined}
+        onClick={(e) => {
+          if (disabled) {
+            e.preventDefault()
+            return
+          }
+          onClick?.(e)
+        }}
+        className={cx(
+          "flex items-center justify-between rounded-md p-2 text-base transition sm:text-sm",
+          "text-gray-900 dark:text-gray-400",
+          "data-[active=true]:text-blue-600 data-[active=true]:dark:text-blue-500",
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "hover:bg-gray-200/50 hover:dark:bg-gray-900 hover:dark:text-gray-50",
+          focusRing,
+          className,
+        )}
+        {...props}
+      >
+        <span className="flex items-center gap-x-2.5">
+          {Icon && <Icon className="size-[18px] shrink-0" aria-hidden="true" />}
+          {children}
         </span>
-      )}
-    </a>
-  )
-})
+        {disabled ? (
+          <Lock
+            className="size-3.5 shrink-0 text-gray-400 dark:text-gray-600"
+            aria-hidden="true"
+          />
+        ) : notifications ? (
+          <span className="inline-flex size-5 items-center justify-center rounded bg-blue-100 text-sm font-medium text-blue-600 sm:text-xs dark:bg-blue-500/10 dark:text-blue-500">
+            {notifications}
+          </span>
+        ) : null}
+      </a>
+    )
+  },
+)
 SidebarLink.displayName = "SidebarLink"
 
 const SidebarGroup = React.forwardRef<
@@ -344,18 +370,34 @@ const SidebarSubLink = React.forwardRef<
   React.ComponentProps<"a"> & {
     children: React.ReactNode
     isActive?: boolean
+    disabled?: boolean
   }
->(({ isActive, children, className, ...props }, ref) => {
+>(({ isActive, disabled, children, className, href, onClick, ...props }, ref) => {
   return (
     <a
       ref={ref}
+      href={disabled ? undefined : href}
       aria-current={isActive ? "page" : undefined}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : undefined}
       data-active={isActive}
+      data-disabled={disabled || undefined}
+      onClick={(e) => {
+        if (disabled) {
+          e.preventDefault()
+          return
+        }
+        onClick?.(e)
+      }}
       className={cx(
-        "relative flex gap-2 rounded-md py-1.5 pl-9 pr-3 text-base transition sm:text-sm",
-        "text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50",
+        "relative flex items-center justify-between gap-2 rounded-md py-1.5 pl-9 pr-3 text-base transition sm:text-sm",
+        "text-gray-700 dark:text-gray-400",
         "data-[active=true]:rounded data-[active=true]:bg-white data-[active=true]:text-blue-600 data-[active=true]:shadow data-[active=true]:ring-1 data-[active=true]:ring-gray-200 data-[active=true]:dark:bg-gray-900 data-[active=true]:dark:text-blue-500 data-[active=true]:dark:ring-gray-800",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "hover:text-gray-900 dark:hover:text-gray-50",
         focusRing,
+        className,
       )}
       {...props}
     >
@@ -365,7 +407,13 @@ const SidebarSubLink = React.forwardRef<
           aria-hidden="true"
         />
       )}
-      {children}
+      <span className="truncate">{children}</span>
+      {disabled && (
+        <Lock
+          className="size-3 shrink-0 text-gray-400 dark:text-gray-600"
+          aria-hidden="true"
+        />
+      )}
     </a>
   )
 })
