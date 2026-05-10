@@ -5,14 +5,23 @@ import {
   primaryKey,
   integer,
   pgEnum,
+  date,
+  jsonb,
+  index,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
 export const userRoleEnum = pgEnum('user_role',[
-  'admin', 
+  'admin',
   'manager',  //gestor
   'technical', // tecnico
   'customer' // cliente
+]);
+
+export const maintenanceTypeEnum = pgEnum('maintenance_type', [
+  'preventiva',
+  'corretiva',
+  'instalação',
 ]);
 
 // ============= USERS =============
@@ -83,7 +92,63 @@ export const verificationTokens = pgTable(
   ]
 );
 
+// ============= MAINTENANCE EVENTS =============
+// Snapshot do participante no momento do agendamento.
+// Mantido como JSONB para não exigir tabela de pessoas (ainda em mock).
+export type AttendeeSnapshot = {
+  name: string;
+  initials: string;
+  color: string;
+};
+
+export const maintenanceEvents = pgTable(
+  'maintenance_event',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    storeSlug: text('store_slug').notNull(),
+    type: maintenanceTypeEnum('type').notNull(),
+    date: date('date', { mode: 'string' }).notNull(),
+    time: text('time').notNull(),
+    description: text('description').notNull(),
+    location: text('location').notNull(),
+    technicianName: text('technician_name').notNull(),
+    attendees: jsonb('attendees')
+      .$type<AttendeeSnapshot[]>()
+      .notNull()
+      .default([]),
+    createdBy: text('created_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('maintenance_event_store_slug_idx').on(t.storeSlug),
+    index('maintenance_event_date_idx').on(t.date),
+  ],
+);
+
+// ============= EVENT SIGNATURES =============
+// Assinaturas de manager: 1 evento × N usuários (PK composta evita duplicatas).
+export const eventSignatures = pgTable(
+  'event_signature',
+  {
+    eventId: text('event_id')
+      .notNull()
+      .references(() => maintenanceEvents.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    signedAt: timestamp('signed_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.eventId, t.userId] })],
+);
+
 // ============= TIPOS INFERIDOS =============
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
+export type MaintenanceEventRow = typeof maintenanceEvents.$inferSelect;
+export type NewMaintenanceEventRow = typeof maintenanceEvents.$inferInsert;
+export type MaintenanceType = (typeof maintenanceTypeEnum.enumValues)[number];

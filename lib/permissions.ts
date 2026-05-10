@@ -20,6 +20,10 @@ export const PERMISSIONS = {
   'reports:download': ['admin', 'manager', 'technical'],
   'reports:export': ['admin'],
 
+  // Eventos / Manutenções
+  'events:sign': ['manager'],
+  'maintenance:manage': ['admin'],
+
   // Configurações
   'settings:manage': ['admin'],
 } as const;

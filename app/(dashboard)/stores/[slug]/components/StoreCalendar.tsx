@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiArrowDownSLine,
   RiCalendarLine,
+  RiCheckLine,
   RiMapPinLine,
+  RiQuillPenLine,
   RiTimeLine,
 } from "@remixicon/react";
+import { Divider } from "@/components/Divider";
 import { cx } from "@/lib/utils";
+import { signMaintenanceEvent } from "../actions";
 import type { Attendee, MaintenanceEvent } from "../store-data";
 
 // ── Constantes ────────────────────────────────────────────────
@@ -86,7 +90,24 @@ function AvatarStack({ attendees }: { attendees: Attendee[] }) {
 }
 
 // ── Sub-componente: card de evento ────────────────────────────
-function ScheduleCard({ event }: { event: MaintenanceEvent }) {
+function ScheduleCard({
+  event,
+  canSign,
+  isSigned,
+  isSigning,
+  signers,
+  onSign,
+}: {
+  event: MaintenanceEvent;
+  canSign: boolean;
+  isSigned: boolean;
+  isSigning: boolean;
+  signers: Attendee[];
+  onSign: () => void;
+}) {
+  // Só pode assinar eventos do banco (com id). Mock events ficam só leitura.
+  const canSignThis = canSign && Boolean(event.id);
+
   return (
     <div className="py-4 first:pt-0 last:pb-0">
       <div className="flex items-start justify-between gap-3">
@@ -119,26 +140,134 @@ function ScheduleCard({ event }: { event: MaintenanceEvent }) {
           </div>
         </div>
 
-        {/* Avatares dos participantes */}
-        <div className="shrink-0 pt-5">
+        {/* Participantes (lista original do cadastro) */}
+        <div className="shrink-0 pt-1">
           <AvatarStack attendees={event.attendees} />
         </div>
       </div>
+
+      {/* Rodapé: assinaturas */}
+      {(canSignThis || signers.length > 0) && (
+        <>
+          <Divider className="my-3" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-600">
+                Assinado por
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {signers.length > 0 ? (
+                  signers.map((s) => (
+                    <span
+                      key={s.name}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 py-0.5 pl-0.5 pr-2 text-[11px] font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                      <Avatar attendee={s} size={20} />
+                      {s.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs italic text-gray-400 dark:text-gray-600">
+                    Nenhuma assinatura ainda
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {canSignThis && (
+              <div className="shrink-0">
+                {isSigned ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20"
+                    aria-label="Evento assinado"
+                  >
+                    <RiCheckLine className="size-3" aria-hidden />
+                    Assinado
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onSign}
+                    disabled={isSigning}
+                    className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-50"
+                    aria-label="Assinar evento"
+                  >
+                    <RiQuillPenLine className="size-3" aria-hidden />
+                    {isSigning ? "Assinando..." : "Assinar"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 // ── Componente principal ──────────────────────────────────────
 interface StoreCalendarProps {
+  storeSlug: string;
   events: MaintenanceEvent[];
+  canSign?: boolean;
+  currentAttendee?: Attendee | null;
+  initialSignedEventIds?: string[];
+  initialSignersByEventId?: Record<string, Attendee[]>;
 }
 
-export function StoreCalendar({ events }: StoreCalendarProps) {
+export function StoreCalendar({
+  storeSlug,
+  events,
+  canSign = false,
+  currentAttendee = null,
+  initialSignedEventIds = [],
+  initialSignersByEventId = {},
+}: StoreCalendarProps) {
   const today = new Date();
   const [viewDate, setViewDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [signed, setSigned] = useState<Set<string>>(
+    () => new Set(initialSignedEventIds),
+  );
+  const [signersByEvent, setSignersByEvent] = useState<
+    Record<string, Attendee[]>
+  >(initialSignersByEventId);
+  const [signingId, setSigningId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
+  const sign = (ev: MaintenanceEvent) => {
+    if (!ev.id || !currentAttendee) return;
+    const eventId = ev.id;
+    const signer = currentAttendee;
+    setSigningId(eventId);
+    // Atualização otimista: marca como assinado e adiciona ao roster.
+    setSigned((prev) => new Set(prev).add(eventId));
+    setSignersByEvent((prev) => {
+      const existing = prev[eventId] ?? [];
+      if (existing.some((a) => a.name === signer.name)) return prev;
+      return { ...prev, [eventId]: [...existing, signer] };
+    });
+
+    startTransition(async () => {
+      const result = await signMaintenanceEvent(eventId, storeSlug);
+      if (!result.ok) {
+        setSigned((prev) => {
+          const next = new Set(prev);
+          next.delete(eventId);
+          return next;
+        });
+        setSignersByEvent((prev) => ({
+          ...prev,
+          [eventId]: (prev[eventId] ?? []).filter(
+            (a) => a.name !== signer.name,
+          ),
+        }));
+      }
+      setSigningId(null);
+    });
+  };
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -294,7 +423,15 @@ export function StoreCalendar({ events }: StoreCalendarProps) {
         {scheduleEvents.length > 0 ? (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {scheduleEvents.map((ev, i) => (
-              <ScheduleCard key={`${ev.date}-${ev.time}-${i}`} event={ev} />
+              <ScheduleCard
+                key={ev.id ?? `${ev.date}-${ev.time}-${i}`}
+                event={ev}
+                canSign={canSign}
+                isSigned={Boolean(ev.id) && signed.has(ev.id!)}
+                isSigning={Boolean(ev.id) && signingId === ev.id}
+                signers={ev.id ? signersByEvent[ev.id] ?? [] : []}
+                onSign={() => sign(ev)}
+              />
             ))}
           </div>
         ) : (

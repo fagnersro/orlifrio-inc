@@ -13,6 +13,7 @@ export type Store = {
   lastEdited: string;
   authorInitials: string;
   icon: ElementType;
+  image: string;
 };
 
 export const stores: Store[] = [
@@ -23,6 +24,7 @@ export const stores: Store[] = [
     lastEdited: '1 day ago',
     authorInitials: 'EK',
     icon: RiGroupFill,
+    image: '/caruaru.jpg',
   },
   {
     slug: 'revenue',
@@ -32,6 +34,7 @@ export const stores: Store[] = [
     lastEdited: '2 days ago',
     authorInitials: 'SL',
     icon: RiBarChartFill,
+    image: '/aflitos.jpg',
   },
   {
     slug: 'active-users',
@@ -41,6 +44,7 @@ export const stores: Store[] = [
     lastEdited: '14 hours ago',
     authorInitials: 'AM',
     icon: RiGroupFill,
+    image: '/espinheiro.jpg',
   },
   {
     slug: 'product-sales',
@@ -50,6 +54,7 @@ export const stores: Store[] = [
     lastEdited: '4 days ago',
     authorInitials: 'JR',
     icon: RiBarChartFill,
+    image: '/hipodromo.jpg',
   },
   {
     slug: 'customer-feedback',
@@ -59,6 +64,7 @@ export const stores: Store[] = [
     lastEdited: '5 days ago',
     authorInitials: 'AC',
     icon: RiChat1Fill,
+    image: '/bairro-novo.jpg',
   },
   {
     slug: 'marketing-campaign-1',
@@ -68,6 +74,7 @@ export const stores: Store[] = [
     lastEdited: '6 days ago',
     authorInitials: 'MS',
     icon: RiMegaphoneFill,
+    image: '/casa-caiada.jpg',
   },
   {
     slug: 'marketing-campaign-2',
@@ -77,6 +84,7 @@ export const stores: Store[] = [
     lastEdited: '6 days ago',
     authorInitials: 'MS',
     icon: RiMegaphoneFill,
+    image: '/rio-doce.jpg',
   },
   {
     slug: 'marketing-campaign-3',
@@ -86,5 +94,6 @@ export const stores: Store[] = [
     lastEdited: '6 days ago',
     authorInitials: 'MS',
     icon: RiMegaphoneFill,
+    image: '/janga.jpg',
   },
 ];

@@ -5,6 +5,8 @@ export type Attendee = {
 };
 
 export type MaintenanceEvent = {
+  // id é opcional: presente quando vem do banco, ausente em dados mock
+  id?: string;
   date: string;
   type: "preventiva" | "corretiva" | "instalação";
   description: string;
@@ -49,7 +51,7 @@ export type StoreDetail = {
 };
 
 // ── Técnicos reutilizáveis ────────────────────────────────────
-const TECHS: Record<string, Attendee> = {
+export const TECHS: Record<string, Attendee> = {
   joao:    { name: "João Silva",       initials: "JS", color: "#3b82f6" },
   maria:   { name: "Maria Oliveira",   initials: "MO", color: "#ec4899" },
   pedro:   { name: "Pedro Santos",     initials: "PS", color: "#f59e0b" },
@@ -59,7 +61,7 @@ const TECHS: Record<string, Attendee> = {
 };
 
 // Gestores de loja
-const MANAGERS: Record<string, Attendee> = {
+export const MANAGERS: Record<string, Attendee> = {
   eduardo: { name: "Eduardo Klein",   initials: "EK", color: "#06b6d4" },
   sofia:   { name: "Sofia Lima",      initials: "SL", color: "#84cc16" },
   amanda:  { name: "Amanda Martins",  initials: "AM", color: "#6366f1" },
@@ -67,6 +69,10 @@ const MANAGERS: Record<string, Attendee> = {
   andre:   { name: "André Carvalho",  initials: "AC", color: "#f43f5e" },
   marcos:  { name: "Marcos Santos",   initials: "MS", color: "#a855f7" },
 };
+
+export const TECHS_LIST: Attendee[] = Object.values(TECHS);
+export const MANAGERS_LIST: Attendee[] = Object.values(MANAGERS);
+export const PEOPLE_CATALOG: Attendee[] = [...TECHS_LIST, ...MANAGERS_LIST];
 
 // ── Base de histórico de chamados ─────────────────────────────
 const baseTicketHistory: TicketDataPoint[] = [

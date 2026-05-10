@@ -11,7 +11,7 @@ export const ROUTE_PERMISSIONS: ReadonlyArray<{
   permission: Permission;
 }> = [
   { prefix: '/clientes', permission: 'users:read' },
-  { prefix: '/manutencao', permission: 'services:update' },
+  { prefix: '/manutencao', permission: 'maintenance:manage' },
   { prefix: '/relatorios', permission: 'reports:view' },
   { prefix: '/configuracoes', permission: 'settings:manage' },
 ];

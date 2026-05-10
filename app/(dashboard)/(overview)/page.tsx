@@ -3,33 +3,18 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Divider } from '@/components/Divider';
 import { stores } from './data';
+import Image from 'next/image';
 
-function ContentPlaceholder() {
+function ContentPlaceholder({ src, alt }: { src: string; alt: string }) {
   return (
     <div className="relative h-full overflow-hidden rounded bg-gray-50 dark:bg-gray-800">
-      <svg
-        className="absolute inset-0 h-full w-full stroke-gray-200 dark:stroke-gray-700"
-        fill="none"
-      >
-        <defs>
-          <pattern
-            id="pattern-2"
-            x="0"
-            y="0"
-            width="10"
-            height="10"
-            patternUnits="userSpaceOnUse"
-          >
-            <path d="M-3 13 15-5M-5 5l18-18M-1 21 17 3"></path>
-          </pattern>
-        </defs>
-        <rect
-          stroke="none"
-          fill="url(#pattern-2)"
-          width="100%"
-          height="100%"
-        ></rect>
-      </svg>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+        className="object-cover"
+      />
     </div>
   );
 }
@@ -54,13 +39,13 @@ export default function LojasPage() {
               className="relative flex flex-col justify-between p-2"
             >
               <div className="relative h-28">
-                <ContentPlaceholder />
-                {/* <span className="absolute inset-x-0 bottom-0 left-4 flex size-12 translate-y-1/2 items-center justify-center rounded-md border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-[#090E1A]">
+                <ContentPlaceholder src={item.image} alt={item.name} />
+                <span className="absolute inset-x-0 bottom-0 left-4 flex size-12 translate-y-1/2 items-center justify-center rounded-md border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-[#090E1A]">
                   <item.icon
                     className="size-5 text-blue-500 dark:text-blue-500"
                     aria-hidden={true}
                   />
-                </span> */}
+                </span>
               </div>
               <div className="flex flex-1 flex-col px-2 pb-2 pt-8">
                 <div className="flex-1">

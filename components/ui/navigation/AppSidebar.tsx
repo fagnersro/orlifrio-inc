@@ -83,7 +83,7 @@ const navigation2: ReadonlyArray<NavGroup> = [
         name: "Manutenção",
         href: "/manutencao",
         active: false,
-        permission: "services:update",
+        permission: "maintenance:manage",
       },
       {
         name: "Relatórios",

@@ -12,10 +12,18 @@ import {
   RiUserLine,
 } from "@remixicon/react";
 
+import { and, asc, eq, inArray } from "drizzle-orm";
+
+import { auth } from "@/auth";
+import { db } from "@/db";
+import { eventSignatures, maintenanceEvents, users } from "@/db/schema";
+import { hasPermission } from "@/lib/permissions";
+import { userToAttendee } from "@/lib/avatar";
+import type { Attendee } from "./store-data";
 import { Can } from "@/components/ui/Can";
 import { Card } from "@/components/ui/Card";
 import { stores } from "@/app/(dashboard)/(overview)/data";
-import { getStoreDetail } from "./store-data";
+import { getStoreDetail, type MaintenanceEvent } from "./store-data";
 import { StoreCalendar } from "./components/StoreCalendar";
 import { StoreOverview } from "./components/StoreOverview";
 import { TicketsChart } from "./components/TicketsChart";
@@ -69,6 +77,66 @@ export default async function StorePage({
   if (!store) notFound();
 
   const detail = getStoreDetail(slug);
+  const session = await auth();
+  const canSign = hasPermission(session?.user?.role, "events:sign");
+  const currentAttendee = canSign
+    ? userToAttendee({
+        id: session!.user.id,
+        name: session!.user.name,
+        email: session!.user.email,
+      })
+    : null;
+
+  // Eventos persistidos no banco para esta loja
+  const dbEvents = await db
+    .select()
+    .from(maintenanceEvents)
+    .where(eq(maintenanceEvents.storeSlug, slug))
+    .orderBy(asc(maintenanceEvents.date), asc(maintenanceEvents.time));
+
+  const events: MaintenanceEvent[] = dbEvents.map((e) => ({
+    id: e.id,
+    date: e.date,
+    type: e.type,
+    description: e.description,
+    technician: e.technicianName,
+    time: e.time,
+    location: e.location,
+    attendees: e.attendees,
+  }));
+
+  // Todos os signers de todos os eventos exibidos (JOIN com user)
+  const signersByEventId: Record<string, Attendee[]> = {};
+  let signedEventIds: string[] = [];
+  if (events.length > 0) {
+    const eventIds = events.map((e) => e.id!).filter(Boolean);
+    if (eventIds.length > 0) {
+      const rows = await db
+        .select({
+          eventId: eventSignatures.eventId,
+          userId: users.id,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(eventSignatures)
+        .innerJoin(users, eq(eventSignatures.userId, users.id))
+        .where(inArray(eventSignatures.eventId, eventIds));
+
+      for (const r of rows) {
+        const attendee = userToAttendee({
+          id: r.userId,
+          name: r.userName,
+          email: r.userEmail,
+        });
+        if (attendee) {
+          (signersByEventId[r.eventId] ??= []).push(attendee);
+        }
+        if (session?.user?.id && r.userId === session.user.id) {
+          signedEventIds.push(r.eventId);
+        }
+      }
+    }
+  }
 
   return (
     <section aria-label={store.name} className="space-y-6">
@@ -142,7 +210,14 @@ export default async function StorePage({
               Previsão de Manutenções
             </h2>
           </div>
-          <StoreCalendar events={detail.maintenanceSchedule} />
+          <StoreCalendar
+            storeSlug={slug}
+            events={events}
+            canSign={canSign}
+            currentAttendee={currentAttendee}
+            initialSignedEventIds={signedEventIds}
+            initialSignersByEventId={signersByEventId}
+          />
         </Card>
 
         {/* Gráfico de chamados */}
