@@ -12,22 +12,21 @@ import {
   RiUserLine,
 } from "@remixicon/react";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
-
 import { auth } from "@/auth";
-import { db } from "@/db";
-import { eventSignatures, maintenanceEvents, users } from "@/db/schema";
-import { hasPermission } from "@/lib/permissions";
-import { userToAttendee } from "@/lib/avatar";
-import type { Attendee } from "./store-data";
-import { Can } from "@/components/ui/Can";
+import { Can } from "@/features/authorization/components/Can";
 import { Card } from "@/components/ui/Card";
-import { stores } from "@/app/(dashboard)/(overview)/data";
-import { getStoreDetail, type MaintenanceEvent } from "./store-data";
-import { StoreCalendar } from "./components/StoreCalendar";
-import { StoreOverview } from "./components/StoreOverview";
-import { TicketsChart } from "./components/TicketsChart";
+import { StoreCalendar } from "@/features/maintenance/components/StoreCalendar";
+import {
+  getSignaturesForEvents,
+  listMaintenanceEventsByStore,
+} from "@/features/maintenance/queries";
+import { getStoreDetail, stores } from "@/features/stores/mocks";
+import { userToAttendee } from "@/lib/avatar";
+import { hasPermission } from "@/features/authorization/permissions";
 import { cx } from "@/lib/utils";
+
+import { StoreOverview } from "./_components/StoreOverview";
+import { TicketsChart } from "./_components/TicketsChart";
 
 export function generateStaticParams() {
   return stores.map((s) => ({ slug: s.slug }));
@@ -87,56 +86,12 @@ export default async function StorePage({
       })
     : null;
 
-  // Eventos persistidos no banco para esta loja
-  const dbEvents = await db
-    .select()
-    .from(maintenanceEvents)
-    .where(eq(maintenanceEvents.storeSlug, slug))
-    .orderBy(asc(maintenanceEvents.date), asc(maintenanceEvents.time));
-
-  const events: MaintenanceEvent[] = dbEvents.map((e) => ({
-    id: e.id,
-    date: e.date,
-    type: e.type,
-    description: e.description,
-    technician: e.technicianName,
-    time: e.time,
-    location: e.location,
-    attendees: e.attendees,
-  }));
-
-  // Todos os signers de todos os eventos exibidos (JOIN com user)
-  const signersByEventId: Record<string, Attendee[]> = {};
-  let signedEventIds: string[] = [];
-  if (events.length > 0) {
-    const eventIds = events.map((e) => e.id!).filter(Boolean);
-    if (eventIds.length > 0) {
-      const rows = await db
-        .select({
-          eventId: eventSignatures.eventId,
-          userId: users.id,
-          userName: users.name,
-          userEmail: users.email,
-        })
-        .from(eventSignatures)
-        .innerJoin(users, eq(eventSignatures.userId, users.id))
-        .where(inArray(eventSignatures.eventId, eventIds));
-
-      for (const r of rows) {
-        const attendee = userToAttendee({
-          id: r.userId,
-          name: r.userName,
-          email: r.userEmail,
-        });
-        if (attendee) {
-          (signersByEventId[r.eventId] ??= []).push(attendee);
-        }
-        if (session?.user?.id && r.userId === session.user.id) {
-          signedEventIds.push(r.eventId);
-        }
-      }
-    }
-  }
+  const events = await listMaintenanceEventsByStore(slug);
+  const eventIds = events.map((e) => e.id).filter(Boolean) as string[];
+  const { signersByEventId, signedByCurrentUser } = await getSignaturesForEvents(
+    eventIds,
+    session?.user?.id,
+  );
 
   return (
     <section aria-label={store.name} className="space-y-6">
@@ -197,7 +152,7 @@ export default async function StorePage({
       </Card>
 
       {/* ── Overview ── */}
-      <StoreOverview detail={detail} />
+      <StoreOverview detail={detail} events={events} />
 
       {/* ── Grid principal ── */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -215,7 +170,7 @@ export default async function StorePage({
             events={events}
             canSign={canSign}
             currentAttendee={currentAttendee}
-            initialSignedEventIds={signedEventIds}
+            initialSignedEventIds={signedByCurrentUser}
             initialSignersByEventId={signersByEventId}
           />
         </Card>

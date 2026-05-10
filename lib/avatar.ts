@@ -1,4 +1,4 @@
-import type { Attendee } from '@/app/(dashboard)/stores/[slug]/store-data';
+import type { Attendee } from '@/features/stores/types';
 
 const PALETTE = [
   '#3b82f6',

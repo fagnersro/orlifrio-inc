@@ -1,9 +1,9 @@
 import { auth } from "@/auth"
 import { AppSidebar } from "@/components/ui/navigation/AppSidebar"
 import { Breadcrumbs } from "@/components/ui/navigation/Breadcrumbs"
-import { ForbiddenBanner } from "@/components/ui/ForbiddenBanner"
+import { ForbiddenBanner } from "@/features/authorization/components/ForbiddenBanner"
 import { SidebarProvider, SidebarTrigger } from "@/components/Sidebar"
-import { RoleProvider } from "@/lib/role-context"
+import { RoleProvider } from "@/features/authorization/role-context"
 import { cookies } from "next/headers"
 import { Suspense } from "react"
 

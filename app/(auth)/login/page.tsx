@@ -277,7 +277,7 @@ import { Input } from '@/components/Input'
 import { Label } from '@/components/Label'
 import Logo from '../../website/components/ui/Logo'
 
-import { loginAction, registerAction, type FormState } from './actions'
+import { loginAction, registerAction, type FormState } from '@/features/auth/actions'
 
 const AnimatedElement = ({
   children,

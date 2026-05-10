@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
 import { Divider } from '@/components/Divider';
-import { stores } from './data';
+import { stores } from '@/features/stores/mocks';
 import Image from 'next/image';
 
 function ContentPlaceholder({ src, alt }: { src: string; alt: string }) {

@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
-import { hasPermission } from '@/lib/permissions';
-import { permissionForPath } from '@/lib/route-permissions';
+import { hasPermission } from '@/features/authorization/permissions';
+import { permissionForPath } from '@/features/authorization/route-permissions';
 import { NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/website', '/login', '/forgot-password', '/reset-password'];

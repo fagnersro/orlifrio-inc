@@ -1,14 +1,8 @@
-import { asc, desc } from "drizzle-orm"
-
-import { db } from "@/db"
-import { maintenanceEvents } from "@/db/schema"
-import { PrevisaoForm } from "./_components/PrevisaoForm"
+import { PrevisaoForm } from "@/features/maintenance/components/PrevisaoForm"
+import { listAllMaintenanceEvents } from "@/features/maintenance/queries"
 
 export default async function PrevisaoPage() {
-  const events = await db
-    .select()
-    .from(maintenanceEvents)
-    .orderBy(desc(maintenanceEvents.date), asc(maintenanceEvents.time))
+  const events = await listAllMaintenanceEvents()
 
   return (
     <section

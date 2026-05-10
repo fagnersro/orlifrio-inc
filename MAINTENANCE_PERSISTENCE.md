@@ -28,18 +28,15 @@ Migration: `db/migrations/0003_opposite_iron_lad.sql`. Aplicada com `pnpm db:mig
 
 ### 2. Server Actions
 
-- **`app/(dashboard)/manutencao/previsao/actions.ts` → `createMaintenanceEvent(input)`**
-  - Protegido por `requirePermission('maintenance:manage')` (admin-only).
-  - Valida com `lib/schemas/maintenance.ts` (Zod).
-  - Insere no banco com `created_by = session.user.id`.
-  - Chama `revalidatePath('/stores/<slug>')` para que a página da loja reflita o novo evento sem reload manual.
+Após reorganização feature-first, tudo vive em `features/maintenance/`:
 
-- **`app/(dashboard)/stores/[slug]/actions.ts` → `signMaintenanceEvent(eventId, storeSlug)`**
-  - Protegido por `requirePermission('events:sign')` (manager-only).
-  - Insere em `event_signature` com `onConflictDoNothing()` — idempotente; clicar "Assinar" duas vezes não falha.
-  - `revalidatePath` da loja.
+- **`features/maintenance/actions.ts`** contém `createMaintenanceEvent`, `updateMaintenanceEvent`, `deleteMaintenanceEvent` e `signMaintenanceEvent`.
+  - Protegidas por `requirePermission('maintenance:manage')` (CRUD) ou `requirePermission('events:sign')` (assinatura).
+  - Validação com `features/maintenance/schemas.ts` (Zod).
+  - `signMaintenanceEvent` usa `onConflictDoNothing()` — idempotente; clicar "Assinar" duas vezes não falha.
+  - Todas chamam `revalidatePath('/manutencao/previsao')` e/ou `revalidatePath('/stores/<slug>')` para que a UI atualize sem reload.
 
-### 3. Form de Previsão (`PrevisaoForm.tsx`)
+### 3. Form de Previsão (`features/maintenance/components/PrevisaoForm.tsx`)
 
 - `useTransition` para `isPending`, mostra "Salvando..." e desabilita os botões.
 - Em sucesso: reseta o form e mostra banner verde.
@@ -48,13 +45,12 @@ Migration: `db/migrations/0003_opposite_iron_lad.sql`. Aplicada com `pnpm db:mig
 
 ### 4. Página da loja (`stores/[slug]/page.tsx`)
 
-- Faz dois selects via Drizzle:
-  1. `maintenance_event` filtrado por `store_slug`, ordenado por `date, time`.
-  2. `event_signature` filtrado por `(user_id = session.user.id, event_id IN <ids buscados>)`.
-- Mapeia rows do banco para o tipo `MaintenanceEvent` esperado pelo `StoreCalendar`.
-- Passa `events`, `canSign`, `currentAttendee` e `initialSignedEventIds` ao calendário.
+- Não faz mais SELECTs inline. Consome **`features/maintenance/queries.ts`**:
+  - `listMaintenanceEventsByStore(slug)` — eventos da loja, já mapeados ao tipo de UI.
+  - `getSignaturesForEvents(eventIds, currentUserId)` — em **uma única query** com JOIN, traz `signersByEventId` (todos os signers) e `signedByCurrentUser` (subset do user logado).
+- Passa `events`, `canSign`, `currentAttendee`, `initialSignedEventIds` e `initialSignersByEventId` ao calendário.
 
-### 5. `StoreCalendar.tsx` — assinaturas reais
+### 5. `features/maintenance/components/StoreCalendar.tsx` — assinaturas reais
 
 - Tipo `MaintenanceEvent` ganhou `id?: string` (opcional). DB events têm; mock events (caso ainda apareçam em outros lugares) não têm.
 - `signed: Set<string>` agora é indexado por **id do evento** e inicializado com `initialSignedEventIds`.
@@ -89,7 +85,7 @@ avatar do manager aparece na stack do card; estado sobrevive a refresh
 | Criar evento via action | `maintenance:manage` | admin |
 | Assinar evento | `events:sign` | manager |
 
-A defesa fica em três camadas: proxy (`route-permissions.ts`), layout (`requirePermission`) e server action (`requirePermission` antes do INSERT).
+A defesa fica em três camadas: proxy (`features/authorization/route-permissions.ts`), layout (`requirePermission`) e server action (`requirePermission` antes do INSERT).
 
 ## Próximos passos
 
@@ -123,6 +119,30 @@ A defesa fica em três camadas: proxy (`route-permissions.ts`), layout (`require
 7. **Notificações.** Quando admin agenda, técnico/manager envolvidos recebem email/notif. Stack candidata: Resend (já planejado para reset de senha).
 
 8. **Histórico de alterações.** Tabela `maintenance_event_history` para auditoria — quem mudou o quê, quando.
+
+### Arquitetura atual (após reorganização feature-first)
+
+```
+features/
+├── auth/                # autenticação: login, register, forgot/reset password
+│   ├── schemas.ts
+│   ├── actions.ts
+│   └── components/ResetPasswordForm.tsx
+├── authorization/       # RBAC: permissions, route guards, UI gates
+│   ├── permissions.ts
+│   ├── route-permissions.ts
+│   ├── role-context.tsx
+│   └── components/{Can,ForbiddenBanner}.tsx
+├── maintenance/         # agendamentos + assinaturas
+│   ├── schemas.ts
+│   ├── types.ts
+│   ├── actions.ts
+│   ├── queries.ts       # server-only
+│   └── components/{PrevisaoForm,EventsTable,StoreCalendar}.tsx
+└── stores/              # ainda mock — vira queries.ts quando virar persistência
+    ├── types.ts
+    └── mocks.ts
+```
 
 ### Pendência técnica notada (fora do escopo deste passo)
 

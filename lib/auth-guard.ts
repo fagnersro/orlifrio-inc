@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { hasPermission, type Permission } from './permissions';
+import { hasPermission, type Permission } from '@/features/authorization/permissions';
 import { redirect } from 'next/navigation';
 
 export async function requireAuth() {

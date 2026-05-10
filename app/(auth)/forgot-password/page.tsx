@@ -8,7 +8,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Label } from '@/components/Label'
 import Logo from '../../website/components/ui/Logo'
-import { forgotPasswordAction, type ForgotPasswordState } from './actions'
+import { forgotPasswordAction, type ForgotPasswordState } from '@/features/auth/actions'
 
 const initialState: ForgotPasswordState = {}
 

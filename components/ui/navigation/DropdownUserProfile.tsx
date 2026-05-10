@@ -14,7 +14,7 @@ import {
   DropdownMenuSubMenuTrigger,
   DropdownMenuTrigger,
 } from "@/components/DropdownMenu"
-import { logoutAction } from "@/app/(auth)/login/actions"
+import { logoutAction } from "@/features/auth/actions"
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import * as React from "react"

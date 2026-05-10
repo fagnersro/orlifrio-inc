@@ -14,8 +14,8 @@ import {
   SidebarMenuSub,
   SidebarSubLink,
 } from "@/components/Sidebar"
-import { hasPermission, type Permission } from "@/lib/permissions"
-import { useRole } from "@/lib/role-context"
+import { hasPermission, type Permission } from "@/features/authorization/permissions"
+import { useRole } from "@/features/authorization/role-context"
 import { cx, focusRing } from "@/lib/utils"
 import { RiArrowDownSFill } from "@remixicon/react"
 import {

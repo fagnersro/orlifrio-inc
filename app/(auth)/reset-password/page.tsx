@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 
 import Logo from '../../website/components/ui/Logo'
-import { ResetPasswordForm } from './ResetPasswordForm'
+import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm'
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{ token?: string; email?: string }>
